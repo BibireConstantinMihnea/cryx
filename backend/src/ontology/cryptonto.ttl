@@ -1,0 +1,192 @@
+@prefix : <https://cryx.org/cryptonto#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+
+#################################################################
+#    Core Class
+#################################################################
+
+:CryptoAsset rdf:type owl:Class ;
+    rdfs:label "Crypto Asset"@en ;
+    rdfs:subClassOf schema:FinancialProduct ;
+    rdfs:comment "A digital asset that uses cryptography to secure transactions, control the creation of additional units, and verify the transfer of assets."@en .
+
+:HashAlgorithm rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
+    rdfs:label "Hash Algorithm"@en ;
+    rdfs:comment "A cryptographic algorithm that takes an input and produces a fixed-size string of bytes, typically a digest."@en .
+
+:ProgrammingLanguage rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
+    rdfs:label "Programming Language"@en ;
+    rdfs:comment "A computer programming language."@en .
+
+:ConsensusAlgorithm rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
+    rdfs:label "Consensus Algorithm"@en ;
+    rdfs:comment "A method of reaching agreement on the state of a distributed network."@en .
+
+:RealWorldAsset rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
+    rdfs:label "Real World Asset"@en ;
+    rdfs:comment "Real and financial assets that are tokenized for trading on blockchains."@en .
+
+:CryptoSymbol rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
+    rdfs:label "Crypto Symbol"@en ;
+    rdfs:comment "The name of a cryptocurrency, token, or other digital asset."@en .
+
+:MarketSnapshot rdf:type owl:Class ;
+    rdfs:label "Market Snapshot"@en ;
+    rdfs:comment "A record of financial metrics for a crypto asset at a specific point in time."@en .
+
+#################################################################
+#    Technical Classification
+#################################################################
+
+:Coin rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Crypto Coin"@en ;
+    rdfs:comment "A cryptocurrency that runs on its own independent blockchain (Layer 1). Acts as the native fuel for that network."@en ;
+    owl:disjointWith :Token .
+
+:Token rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Crypto Token"@en ;
+    rdfs:comment "A cryptocurrency that relies on another blockchain's infrastructure (Layer 2 or dApp). Often represents a specific utility or asset."@en .
+
+#################################################################
+#    Functional Classification
+#################################################################
+
+:PaymentCrypto rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Payment Cryptocurrency"@en ;
+    rdfs:comment "Assets designed primarily to be used as digital cash for transactions, aiming for speed, low fees, and borderless transfer."@en .
+
+:InfrastructureCrypto rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Infrastructure Cryptocurrency"@en ;
+    rdfs:comment "Native coins of blockchain networks that provide the platform for other applications (dApps) to be built upon."@en .
+
+:FinancialCrypto rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Financial Cryptocurrency"@en ;
+    rdfs:comment "Tokens that facilitate Decentralized Finance (DeFi) operations, such as exchanges, lending, or liquidity providing."@en .
+
+:ServiceCrypto rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Service Cryptocurrency"@en ;
+    rdfs:comment "Tokens that provide access to a specific digital service or utility, such as file storage or computing power."@en .
+
+:MediaEntertainmentCrypto rdf:type owl:Class ;
+    rdfs:subClassOf :CryptoAsset ;
+    rdfs:label "Media & Entertainment Cryptocurrency"@en ;
+    rdfs:comment "Tokens representing ownership of digital content, art, games, or metaverse experiences."@en .
+
+#################################################################
+#    Specific Sub-Types
+#################################################################
+
+:StoreOfValue rdf:type owl:Class ;
+    rdfs:subClassOf :PaymentCrypto ;
+    rdfs:label "Store of Value"@en ;
+    rdfs:comment "Assets that are supposed to retain value over time compared to fiat currencies."@en .
+
+:PrivacyCoin rdf:type owl:Class ;
+    rdfs:subClassOf :PaymentCrypto ;
+    rdfs:label "Privacy Coin"@en ;
+    rdfs:comment "Cryptocurrencies designed to enhance transaction anonymity by obscuring details about the sender, receiver and amount spent."@en .
+
+:Stablecoin rdf:type owl:Class ;
+    rdfs:subClassOf :PaymentCrypto ;
+    rdfs:label "Stablecoin"@en ;
+    rdfs:comment "A cryptocurrency pegged to a stable asset like fiat currency to minimize volatility."@en .
+
+:MemeCoin rdf:type owl:Class ;
+    rdfs:subClassOf :PaymentCrypto ;
+    rdfs:label "Meme Coin"@en ;
+    rdfs:comment "Cryptocurrencies inspired by internet memes or pop culture, often community-driven with high volatility."@en .
+
+:NFT rdf:type owl:Class ;
+    rdfs:subClassOf :Token ;
+    rdfs:label "Non-Fungible Token"@en ;
+    rdfs:comment "A unique digital asset that represents a single item, such as a digital artwork or a virtual pet."@en .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+:hasHashAlgorithm rdf:type owl:ObjectProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range :HashAlgorithm ;
+    rdfs:label "has hash algorithm"@en ;
+    rdfs:comment "Specifies the hash algorithm used to secure the asset."@en .
+
+:hasProgrammingLanguage rdf:type owl:ObjectProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range :ProgrammingLanguage ;
+    rdfs:label "has programming language"@en ;
+    rdfs:comment "Specifies the programming language used to implement the asset."@en .
+
+:hasConsensusAlgorithm rdf:type owl:ObjectProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range :ConsensusAlgorithm ;
+    rdfs:label "has consensus algorithm"@en ;
+    rdfs:comment "Specifies the consensus algorithm used to reach agreement on the state of the asset."@en .
+
+:hasSymbol rdf:type owl:ObjectProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range :CryptoSymbol ;
+    rdfs:label "has symbol"@en ;
+    rdfs:comment "Specifies the symbol used to identify the asset."@en .
+
+:peggedTo rdf:type owl:ObjectProperty ;
+    rdfs:domain :Stablecoin ;
+    rdfs:range :RealWorldAsset ;
+    rdfs:label "pegged to"@en ;
+    rdfs:comment "The real-world asset (e.g., USD, Gold) that the stablecoin tracks."@en .
+
+:hasMarketSnapshot rdf:type owl:ObjectProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range :MarketSnapshot ;
+    rdfs:label "has market snapshot"@en ;
+    rdfs:comment "Links a crypto asset to a specific historical or current market data record."@en .
+
+#################################################################
+#    Data Properties
+#################################################################
+
+:atTime rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The specific timestamp when these stats were recorded." .
+
+:currency rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The fiat currency code for these values (e.g., 'EUR', 'USD')." .
+
+:currentPrice rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:decimal .
+
+:marketCap rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:decimal .
+
+:totalVolume24h rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:decimal .
+
+:circulatingSupply rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:decimal .
+
+:marketRank rdf:type owl:DatatypeProperty ;
+    rdfs:domain :MarketSnapshot ;
+    rdfs:range xsd:integer .
