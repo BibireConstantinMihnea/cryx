@@ -4,6 +4,7 @@ require("dotenv").config();
 
 const cryptoRoutes = require("./src/crypto/crypto.routes");
 const { loadOntology } = require("./src/ontology/ontology.loader");
+const ingestRoutes = require("./src/ingest/ingest.routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +15,7 @@ app.use(express.json());
 
 // Register Routes
 app.use("/api/crypto", cryptoRoutes);
+app.use("/api/ingest", ingestRoutes);
 
 const startServer = async () => {
   try {

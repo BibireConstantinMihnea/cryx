@@ -44,6 +44,26 @@
     rdfs:label "Market Snapshot"@en ;
     rdfs:comment "A record of financial metrics for a crypto asset at a specific point in time."@en .
 
+:CryptoTag rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
+    rdfs:label "Crypto Tag"@en ;
+    rdfs:comment "A tag that describes a cryptocurrency, token, or other digital asset."@en .
+
+# :Website rdf:type owl:Class ;
+#     rdfs:subClassOf schema:Thing ;
+#     rdfs:label "Cryptocurrency's Website"@en ;
+#     rdfs:comment "A website that provides information about a cryptocurrency, token, or other digital asset."@en .
+
+# :TechnicalDocumentation rdf:type owl:Class ;
+#     rdfs:subClassOf schema:Thing ;
+#     rdfs:label "Technical Documentation"@en ;
+#     rdfs:comment "Technical documentation for a cryptocurrency, token, or other digital asset."@en .
+
+# :SourceCode rdf:type owl:Class ;
+#     rdfs:subClassOf schema:Thing ;
+#     rdfs:label "Source Code"@en ;
+#     rdfs:comment "Source code for a cryptocurrency, token, or other digital asset."@en .
+
 #################################################################
 #    Technical Classification
 #################################################################
@@ -157,6 +177,12 @@
     rdfs:label "has market snapshot"@en ;
     rdfs:comment "Links a crypto asset to a specific historical or current market data record."@en .
 
+:hasTag rdf:type owl:ObjectProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range :CryptoTag ;
+    rdfs:label "has tag"@en ;
+    rdfs:comment "Links a crypto asset to a specific tag."@en .
+
 #################################################################
 #    Data Properties
 #################################################################
@@ -190,3 +216,75 @@
 :marketRank rdf:type owl:DatatypeProperty ;
     rdfs:domain :MarketSnapshot ;
     rdfs:range xsd:integer .
+
+:website rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "website"@en ;
+    rdfs:comment "The website for the asset."@en .
+
+:technicalDocumentation rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "technical documentation"@en ;
+    rdfs:comment "The technical documentation for the asset."@en .
+
+:sourceCode rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "source code"@en ;
+    rdfs:comment "The source code for the asset."@en .
+
+:explorer rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "explorer"@en ;
+    rdfs:comment "The explorer for the asset."@en .
+
+:messageBoard rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "message board"@en ;
+    rdfs:comment "The message board for the asset."@en .
+
+:chat rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "chat"@en ;
+    rdfs:comment "The chat service for the asset."@en .
+
+:announcement rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "announcement"@en ;    
+    rdfs:comment "The announcement service for the asset."@en .
+
+:twitter rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "twitter"@en ;
+    rdfs:comment "The twitter account for the asset."@en .
+
+:reddit rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "reddit"@en ;
+    rdfs:comment "The reddit account for the asset."@en .
+
+:logo rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:anyURI ;
+    rdfs:label "logo"@en ;
+    rdfs:comment "The logo for the asset."@en .
+
+:description rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:string ;
+    rdfs:label "description"@en ;
+    rdfs:comment "A description of the asset."@en .
+
+:dateLaunched rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:dateTime ;
+    rdfs:label "date launched"@en ;
+    rdfs:comment "The date the asset was launched."@en .
