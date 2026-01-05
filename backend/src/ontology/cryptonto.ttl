@@ -35,12 +35,8 @@
     rdfs:label "Real World Asset"@en ;
     rdfs:comment "Real and financial assets that are tokenized for trading on blockchains."@en .
 
-:CryptoSymbol rdf:type owl:Class ;
-    rdfs:subClassOf schema:Thing ;
-    rdfs:label "Crypto Symbol"@en ;
-    rdfs:comment "The name of a cryptocurrency, token, or other digital asset."@en .
-
 :MarketSnapshot rdf:type owl:Class ;
+    rdfs:subClassOf schema:Thing ;
     rdfs:label "Market Snapshot"@en ;
     rdfs:comment "A record of financial metrics for a crypto asset at a specific point in time."@en .
 
@@ -48,21 +44,6 @@
     rdfs:subClassOf schema:Thing ;
     rdfs:label "Crypto Tag"@en ;
     rdfs:comment "A tag that describes a cryptocurrency, token, or other digital asset."@en .
-
-# :Website rdf:type owl:Class ;
-#     rdfs:subClassOf schema:Thing ;
-#     rdfs:label "Cryptocurrency's Website"@en ;
-#     rdfs:comment "A website that provides information about a cryptocurrency, token, or other digital asset."@en .
-
-# :TechnicalDocumentation rdf:type owl:Class ;
-#     rdfs:subClassOf schema:Thing ;
-#     rdfs:label "Technical Documentation"@en ;
-#     rdfs:comment "Technical documentation for a cryptocurrency, token, or other digital asset."@en .
-
-# :SourceCode rdf:type owl:Class ;
-#     rdfs:subClassOf schema:Thing ;
-#     rdfs:label "Source Code"@en ;
-#     rdfs:comment "Source code for a cryptocurrency, token, or other digital asset."@en .
 
 #################################################################
 #    Technical Classification
@@ -158,12 +139,6 @@
     rdfs:range :ConsensusAlgorithm ;
     rdfs:label "has consensus algorithm"@en ;
     rdfs:comment "Specifies the consensus algorithm used to reach agreement on the state of the asset."@en .
-
-:hasSymbol rdf:type owl:ObjectProperty ;
-    rdfs:domain :CryptoAsset ;
-    rdfs:range :CryptoSymbol ;
-    rdfs:label "has symbol"@en ;
-    rdfs:comment "Specifies the symbol used to identify the asset."@en .
 
 :peggedTo rdf:type owl:ObjectProperty ;
     rdfs:domain :Stablecoin ;
@@ -288,3 +263,9 @@
     rdfs:range xsd:dateTime ;
     rdfs:label "date launched"@en ;
     rdfs:comment "The date the asset was launched."@en .
+
+:symbol rdf:type owl:DatatypeProperty ;
+    rdfs:domain :CryptoAsset ;
+    rdfs:range xsd:string ;
+    rdfs:label "symbol"@en ;
+    rdfs:comment "The symbol used to identify the asset."@en .

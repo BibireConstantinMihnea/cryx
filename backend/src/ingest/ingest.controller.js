@@ -5,7 +5,7 @@ exports.triggerSync = async (req, res) => {
     await ingestService.syncTopCryptos();
 
     res.status(200).json({
-      message: "Ingestion started successfully. Check server logs for details.",
+      message: "Ingestion started successfully.",
     });
   } catch (error) {
     res.status(500).json({

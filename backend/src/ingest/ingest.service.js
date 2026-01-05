@@ -48,7 +48,6 @@ class IngestService {
 
   // Convert cryptocurrency data to RDF Triples
   mapCoinToRDF(basic, details) {
-
     const assetId = `:${details.slug}`;
 
     let typeClass;
@@ -59,16 +58,38 @@ class IngestService {
       typeClass = ":Token";
     }
 
-    // Create Symbol Object
-    const symbolId = `:Symbol_${basic.symbol}`;
-    let rdf = `
-            ${assetId} :hasSymbol ${symbolId} .
-            ${symbolId} a :CryptoSymbol ; rdfs:label "${basic.symbol}" .
+    const quote = basic.quote.USD;
+    const snapshotId = `:Snapshot_${assetId}_${Date.now()}`;
+
+    // Sanitize text
+    const safeDesc = details.description
+      ? details.description.replace(/"/g, '\\"')
+      : "";
+
+    let rdf= `
+            ${assetId} a :CryptoAsset ;
+                       a ${typeClass} ;
+                       rdfs:label "${details.name}" ;
+                       :symbol "${details.symbol}" ;
+                       :description "${safeDesc}" ;
+                       :logo "${details.logo}"^^xsd:anyURI ;
+                       :dateLaunched "${details.date_added}"^^xsd:dateTime ;
+                       :hasMarketSnapshot ${snapshotId} .
+
+            ${snapshotId} a :MarketSnapshot ;
+                          :currency "USD" ;
+                          :currentPrice "${quote.price}"^^xsd:decimal ;
+                          :marketCap "${quote.market_cap}"^^xsd:decimal ;
+                          :totalVolume24h "${quote.volume_24h}"^^xsd:decimal ;
+                          :circulatingSupply "${basic.circulating_supply}"^^xsd:decimal ;
+                          :marketRank "${basic.cmc_rank}"^^xsd:integer ;
+                          :atTime "${quote.last_updated}"^^xsd:dateTime .
         `;
 
     // Create Tag Objects
     if (details.tags && details.tags.length > 0) {
       details.tags.forEach((tag) => {
+
         // Sanitize tag
         const safeTag = tag.replace(/[^a-zA-Z0-9]/g, "");
         const tagId = `:Tag_${safeTag}`;
@@ -79,20 +100,6 @@ class IngestService {
                 `;
       });
     }
-
-    // Sanitize text
-    const safeDesc = details.description
-      ? details.description.replace(/"/g, '\\"')
-      : "";
-
-    rdf += `
-            ${assetId} a :CryptoAsset ;
-                       a ${typeClass} ;
-                       rdfs:label "${details.name}" ;
-                       :description "${safeDesc}" ;
-                       :logo "${details.logo}"^^xsd:anyURI ;
-                       :dateLaunched "${details.date_added}"^^xsd:dateTime .
-        `;
 
     // Add URLs
     const urlMap = {
