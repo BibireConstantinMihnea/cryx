@@ -184,10 +184,6 @@
     rdfs:domain :MarketSnapshot ;
     rdfs:range xsd:decimal .
 
-:circulatingSupply rdf:type owl:DatatypeProperty ;
-    rdfs:domain :MarketSnapshot ;
-    rdfs:range xsd:decimal .
-
 :marketRank rdf:type owl:DatatypeProperty ;
     rdfs:domain :MarketSnapshot ;
     rdfs:range xsd:integer .

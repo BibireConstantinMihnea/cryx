@@ -2,10 +2,13 @@ const ingestService = require("./ingest.service");
 
 exports.triggerSync = async (req, res) => {
   try {
-    await ingestService.syncTopCryptos();
+
+    const mode = req.query.mode || "full";
+
+    await ingestService.syncTopCryptos(mode);
 
     res.status(200).json({
-      message: "Ingestion started successfully.",
+      message: `Ingestion (${mode}) successful`,
     });
   } catch (error) {
     res.status(500).json({
