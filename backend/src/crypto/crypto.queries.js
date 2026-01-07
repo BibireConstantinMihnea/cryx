@@ -11,7 +11,7 @@ module.exports = {
         SELECT ?symbol ?name ?type WHERE {
             ?asset a :CryptoAsset ;
                    rdfs:label ?name ;
-                   :hasSymbol ?symbol ;
+                   :symbol ?symbol ;
                    a ?type .
             # Filter out the base class to only show specific types like Coin/Token
             FILTER(?type != :CryptoAsset)
@@ -22,7 +22,7 @@ module.exports = {
   GET_ASSET_DETAILS: (symbol) => `
         ${PREFIXES}
         SELECT ?name ?price ?marketCap ?lastUpdated WHERE {
-            ?asset :hasSymbol "${symbol}" ;
+            ?asset :symbol "${symbol}" ;
                    rdfs:label ?name .
             
             OPTIONAL {
@@ -43,7 +43,15 @@ module.exports = {
             :${name.replace(/\s+/g, "")} a :${type} ;
                                           a :CryptoAsset ;
                                           rdfs:label "${name}" ;
-                                          :hasSymbol "${symbol}" .
+                                          :symbol "${symbol}" .
+        }
+    `,
+  
+  GET_SEMANTIC_DETAILS: (symbol) => `
+        ${PREFIXES}
+        SELECT ?p ?o WHERE {
+            ?asset :symbol "${symbol}" .
+            ?asset ?p ?o .
         }
     `,
 };

@@ -35,6 +35,22 @@ class CryptoService {
     );
     return { message: `Created ${data.name} successfully` };
   }
+
+  async getSemanticDetails(symbol) {
+    console.log("Căutăm simbolul (cod corectat):", symbol);
+    const rawData = await sparqlClient.query(
+      queries.GET_SEMANTIC_DETAILS(symbol)
+    );
+
+    const details = { symbol };
+    rawData.forEach((row) => {
+      const predicate = row.p.value.split("/#|\//").pop(); // Get predicate name
+      const object = row.o.value;
+      details[predicate] = object;
+    });
+
+    return details;
+  }
 }
 
 module.exports = new CryptoService();
