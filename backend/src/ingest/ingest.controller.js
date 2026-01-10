@@ -17,3 +17,12 @@ exports.triggerSync = async (req, res) => {
     });
   }
 };
+
+exports.resetData = async (req, res) => {
+  try {
+    await require('../database/sparql.client').update(`DELETE WHERE { ?s ?p ?o }`);
+    res.json({ message: "Cleared" });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+};

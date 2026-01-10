@@ -8,13 +8,18 @@ module.exports = {
   // Get all cryptos with their basic info
   GET_ALL_ASSETS: () => `
         ${PREFIXES}
-        SELECT ?symbol ?name ?type WHERE {
-            ?asset a :CryptoAsset ;
-                   rdfs:label ?name ;
-                   :symbol ?symbol ;
-                   a ?type .
-            # Filter out the base class to only show specific types like Coin/Token
+        SELECT ?symbol ?name ?type ?price ?marketCap WHERE {
+            ?s a ?type ;
+            :symbol ?symbol ;
+            rdfs:label ?name .
+            
             FILTER(?type != :CryptoAsset)
+
+            OPTIONAL { 
+                ?s :hasMarketSnapshot ?snap .
+                ?snap :currentPrice ?price .
+                ?snap :marketCap ?marketCap .
+            }
         }
     `,
 

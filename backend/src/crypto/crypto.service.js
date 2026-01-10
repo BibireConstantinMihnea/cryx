@@ -5,11 +5,12 @@ class CryptoService {
   async getAllCryptos() {
     const rawData = await sparqlClient.query(queries.GET_ALL_ASSETS());
 
-    // Transform RDF format to clean JSON array
     return rawData.map((row) => ({
       symbol: row.symbol.value,
       name: row.name.value,
-      type: row.type.value.split("#")[1], // Extract "Coin" from URI
+      type: row.type.value.split("#")[1],
+      price: row.price ? parseFloat(row.price.value) : 0,
+      marketCap: row.marketCap ? parseFloat(row.marketCap.value) : 0
     }));
   }
 
@@ -44,7 +45,7 @@ class CryptoService {
 
     const details = { symbol };
     rawData.forEach((row) => {
-      const predicate = row.p.value.split("/#|\//").pop(); // Get predicate name
+      const predicate = row.p.value.split("/#|\//").pop();
       const object = row.o.value;
       details[predicate] = object;
     });
