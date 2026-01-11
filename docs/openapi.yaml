@@ -1,0 +1,204 @@
+openapi: 3.0.0
+info:
+  title: cryx Knowledge Explorer API
+  description: >
+    Backend API for the cryx application.
+    Enables semantic exploration of cryptocurrencies, access to aggregated financial data,
+    and management of the data ingestion process (ETL) within the Fuseki Knowledge Graph.
+  version: 1.0.0
+  contact:
+    name: "@Team"
+    email: student@info.uaic.ro
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local Development Server
+
+tags:
+  - name: Crypto
+    description: Public read operations and crypto asset exploration.
+  - name: Ingest
+    description: Administrative operations for data synchronization (ETL).
+
+paths:
+  /crypto:
+    get:
+      tags:
+        - Crypto
+      summary: List all cryptocurrencies
+      description: >
+        Returns a complete list of assets (Coins and Tokens) available in the database.
+        Includes basic financial data for populating the main dashboard.
+      responses:
+        '200':
+          description: List successfully returned.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AssetBasic'
+              examples:
+                DashboardView:
+                  summary: Dashboard Data Example
+                  value:
+                    - symbol: "BTC"
+                      name: "Bitcoin"
+                      type: "Coin"
+                      price: 64200.50
+                      marketCap: 1200000000000
+                    - symbol: "USDT"
+                      name: "Tether USDt"
+                      type: "Token"
+                      price: 1.00
+                      marketCap: 83000000000
+
+  /crypto/{symbol}:
+    get:
+      tags:
+        - Crypto
+      summary: Complete details about an asset
+      description: >
+        Aggregates data from two sources:
+        1. Financial data (Price, Market Cap) from the current snapshot.
+        2. Semantic data (Founder, Algorithm, Network) from the ontology.
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          description: The asset symbol (e.g., BTC, ETH, SOL)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Details successfully returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetDetail'
+              examples:
+                BitcoinDetails:
+                  summary: Bitcoin Details (Financial + Semantic)
+                  value:
+                    symbol: "BTC"
+                    name: "Bitcoin"
+                    description: "Bitcoin is a decentralized digital currency..."
+                    price: 64200.50
+                    marketCap: 1200000000000
+                    hasFounder: "http://cryx.org/cryptonto#Satoshi_Nakamoto"
+                    hasHashingAlgorithm: "http://cryx.org/cryptonto#SHA-256"
+                    hasConsensusMechanism: "http://cryx.org/cryptonto#ProofOfWork"
+        '404':
+          description: Asset not found in the Knowledge Graph.
+
+  /crypto/{symbol}/semantic:
+    get:
+      tags:
+        - Crypto
+      summary: Get raw RDF triples
+      description: >
+        Returns direct semantic properties of the node from the RDF graph.
+        Useful for 'Linked Data' visualizations or JSON-LD export.
+      parameters:
+        - name: symbol
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Raw semantic properties.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /ingest/sync:
+    post:
+      tags:
+        - Ingest
+      summary: Data Synchronization (ETL)
+      description: >
+        Triggers the ingestion process:
+        1. Fetches live data from CoinMarketCap API.
+        2. Transforms data into RDF triples according to the `cryptonto.ttl` ontology.
+        3. Inserts triples into the Apache Jena Fuseki server.
+      responses:
+        '200':
+          description: Synchronization successful.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: 
+                    type: string
+                    example: "Data sync completed successfully."
+        '500':
+          description: Error connecting to external API or Fuseki.
+
+  /ingest/reset:
+    post:
+      tags:
+        - Ingest
+      summary: Reset Database
+      description: >
+        WARNING: Deletes all triples from the current Fuseki Dataset (`DELETE WHERE { ?s ?p ?o }`).
+        Used for cleaning the environment before a new ingestion.
+      responses:
+        '200':
+          description: Database cleared.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Database cleared."
+
+components:
+  schemas:
+    AssetBasic:
+      type: object
+      properties:
+        symbol:
+          type: string
+          description: Trading symbol (Ticker).
+        name:
+          type: string
+          description: Full name of the asset.
+        type:
+          type: string
+          enum: [Coin, Token]
+          description: Ontological type of the asset.
+        price:
+          type: number
+          format: float
+          description: Current price in USD.
+        marketCap:
+          type: number
+          format: float
+          description: Market capitalization.
+    
+    AssetDetail:
+      allOf:
+        - $ref: '#/components/schemas/AssetBasic'
+        - type: object
+          properties:
+            description:
+              type: string
+            hasFounder:
+              type: string
+              format: uri
+              description: URI to the Founder resource.
+            hasHashingAlgorithm:
+              type: string
+              format: uri
+            hasConsensusMechanism:
+              type: string
+              format: uri
+          additionalProperties: true 
+          description: Dynamic properties generated from the ontology.
