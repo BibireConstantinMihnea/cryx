@@ -13,7 +13,7 @@ class IngestService {
     console.log(`Starting ingest process in ${mode} mode.`);
 
     // Get top listings IDs
-    const listings = await cmcClient.getLatestListings(10);
+    const listings = await cmcClient.getLatestListings(50);
 
     let metadataMap = {};
 

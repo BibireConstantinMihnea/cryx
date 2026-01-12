@@ -51,12 +51,72 @@ module.exports = {
                                           :symbol "${symbol}" .
         }
     `,
-  
+
   GET_SEMANTIC_DETAILS: (symbol) => `
         ${PREFIXES}
-        SELECT ?p ?o WHERE {
+        SELECT ?p ?o ?oLabel ?nestedP ?nestedO WHERE {
             ?asset :symbol "${symbol}" .
             ?asset ?p ?o .
+            OPTIONAL {
+                ?o a :CryptoTag ;
+                   rdfs:label ?oLabel .
+            }
+            OPTIONAL {
+                ?o ?nestedP ?nestedO .
+                FILTER(isLiteral(?nestedO))
+            }
         }
     `,
+
+    SEARCH_CRYPTOS: (term, type) => {
+        let filterClause = "";
+        let typeClause = "";
+
+        // Filter by search term
+        if (term) {
+            filterClause = `
+                FILTER (
+                    regex(?name, "${term}", "i") || 
+                    regex(?symbol, "${term}", "i")
+                )
+            `;
+        }
+
+        // Filter by type
+        if (type && type !== "All") {
+            typeClause = `?asset a :${type} .`; 
+        }
+
+        return `
+            ${PREFIXES}
+            SELECT ?name ?symbol ?price ?marketCap ?type WHERE {
+                ?asset a :CryptoAsset ;
+                       :symbol ?symbol ;
+                       rdfs:label ?name .
+                
+                # Get the specific type (Coin or Token) for display
+                OPTIONAL { 
+                    ?asset a ?typeClass .
+                    FILTER(?typeClass = :Coin || ?typeClass = :Token)
+                    BIND(strafter(str(?typeClass), "#") AS ?type) 
+                }
+
+                # Apply the Type Filter (if selected)
+                ${typeClause}
+
+                # Get latest snapshot data (Optional)
+                OPTIONAL {
+                    ?asset :hasMarketSnapshot ?snap .
+                    ?snap :currentPrice ?price ;
+                          :marketCap ?marketCap ;
+                          :atTime ?lastUpdated .
+                }
+
+                # Apply the Search Filter (if typed)
+                ${filterClause}
+            }
+            ORDER BY DESC(?marketCap)
+            LIMIT 50
+        `;
+    },
 };

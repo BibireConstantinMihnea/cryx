@@ -10,7 +10,7 @@ class CryptoService {
       name: row.name.value,
       type: row.type.value.split("#")[1],
       price: row.price ? parseFloat(row.price.value) : 0,
-      marketCap: row.marketCap ? parseFloat(row.marketCap.value) : 0
+      marketCap: row.marketCap ? parseFloat(row.marketCap.value) : 0,
     }));
   }
 
@@ -38,19 +38,68 @@ class CryptoService {
   }
 
   async getSemanticDetails(symbol) {
-    console.log("Căutăm simbolul (cod corectat):", symbol);
     const rawData = await sparqlClient.query(
       queries.GET_SEMANTIC_DETAILS(symbol)
     );
 
     const details = { symbol };
+
     rawData.forEach((row) => {
-      const predicate = row.p.value.split("/#|\//").pop();
-      const object = row.o.value;
-      details[predicate] = object;
+      const predicateURI = row.p.value;
+      const shortKey = predicateURI.split(/[\/#]/).pop();
+      const objectURI = row.o.value;
+
+      const isCollection =
+        shortKey === "hasTag" ||
+        shortKey === "hasMarketSnapshot" ||
+        predicateURI.includes("#hasTag");
+
+      if (isCollection) {
+        if (!details[shortKey]) {
+          details[shortKey] = [];
+        }
+
+        let entry = details[shortKey].find((item) => item.id === objectURI);
+
+        if (!entry) {
+          entry = { id: objectURI };
+
+          if (row.oLabel) {
+            entry.label = row.oLabel.value;
+          }
+          details[shortKey].push(entry);
+        }
+
+        if (row.nestedP && row.nestedO) {
+          const nestedKey = row.nestedP.value.split(/[\/#]/).pop();
+          const nestedValue = row.nestedO.value;
+
+          entry[nestedKey] = nestedValue;
+        }
+      } else {
+        let value = objectURI;
+        if (row.oLabel) {
+          value = { id: objectURI, label: row.oLabel.value };
+        }
+        details[shortKey] = value;
+        details[predicateURI] = value;
+      }
     });
 
     return details;
+  }
+
+  async searchCryptos(term, type) {
+    const query = queries.SEARCH_CRYPTOS(term || "", type || "All");
+    const rawData = await sparqlClient.query(query);
+
+    return rawData.map((row) => ({
+      name: row.name.value,
+      symbol: row.symbol.value,
+      type: row.type ? row.type.value : "CryptoAsset",
+      price: row.price ? parseFloat(row.price.value) : 0,
+      marketCap: row.marketCap ? parseFloat(row.marketCap.value) : 0,
+    }));
   }
 }
 

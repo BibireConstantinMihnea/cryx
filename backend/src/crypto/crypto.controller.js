@@ -87,3 +87,13 @@ exports.getLivePrice = async (req, res) => {
     res.json({ price_usd: null, error: "External API Error" });
   }
 };
+
+exports.search = async (req, res) => {
+  try {
+    const { q, type } = req.query; // Get params from URL
+    const results = await cryptoService.searchCryptos(q, type);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

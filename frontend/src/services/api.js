@@ -20,6 +20,10 @@ export const CryptoService = {
 
   getSemanticDetails: async (symbol) => {
     return api.get(`/api/crypto/${symbol}/semantic`);
+  },
+
+  searchCryptos: async (term, type) => {
+    return api.get(`/api/crypto/search?q=${term}&type=${type}`);
   }
 };
 
