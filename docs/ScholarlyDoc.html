@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crypto Knowledge Graph Explorer - Technical Report</title>
+    <style>
+        body { font-family: 'Times New Roman', Times, serif; line-height: 1.6; max-width: 800px; margin: 0 auto; padding: 2rem; color: #333; }
+        h1, h2, h3 { color: #2c3e50; }
+        h1 { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 1rem; }
+        h2 { border-bottom: 1px solid #eee; padding-top: 1rem; }
+        code { background: #f4f4f4; padding: 2px 5px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; }
+        pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; overflow-x: auto; border-left: 4px solid #3498db; }
+        .abstract { font-style: italic; background: #f9f9f9; padding: 1.5rem; margin-bottom: 2rem; border-left: 4px solid #2c3e50; }
+        .keyword { font-weight: bold; color: #e67e22; }
+        table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+<article>
+    <header>
+        <h1>Cryx: A Cryptocurrency Knowledge Explorer</h1>
+        <p style="text-align: center;"><strong>Technical Report & Implementation Details</strong></p>
+    </header>
+
+    <section class="abstract">
+        <h2>Abstract</h2>
+        <p>
+            This report details the engineering and architectural decisions behind <em>Cryx</em>, a web-based Cryptocurrency Knowledge Explorer designed to visualize information and relationships within the cryptocurrency market. The document analyzes the internal data structures and models used, it further explores the RESTful API implementation, the ontological design choices for modeling cryptocurrency and market data, the pragmatic use of external knowledge sources and SPARQL queries and a review of aspects that make the proposed solution conform to linked data principles.
+        </p>
+    </section>
+
+    <section id="introduction">
+        <h2>1. Introduction</h2>
+        <p>
+            The cryptocurrency domain is characterized by highly volatile, interconnected data currently siloed in traditional relational databases or flat JSON APIs. This project aims to elevate this data to the Semantic Web, allowing for graph-based exploration of relationships. The system is built using a React frontend, a Node.js/Express service layer, and an Apache Jena Fuseki RDF store.
+        </p>
+    </section>
+
+    <section id="system-architecture">
+        <h2>2. System Architecture</h2>
+        <p>
+            The <strong>Cryx</strong> platform operates on a Service-Oriented Architecture (SOA), realized as a decoupled web system. The architecture is designed to handle data conversion from classic JSON-centric formats to semantic RDF triples and ontology definitions. To provide a clear structural analysis, we document the system using the <strong>C4 Model</strong> (Context, Containers, Components) and a high-level Use Case view.
+        </p>
+
+        <h3>2.1 Functional Overview (Use Case View)</h3>
+        <p>
+            From the end-user perspective, the system aggregates functionalities into four primary clusters. The interactions are designed to allow seamless transitions between standard market analysis and semantic exploration.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="UseCase.drawio.png" alt="Use Case Diagram" style="max-width: 100%; border: 1px solid #ddd; padding: 5px;">
+            <figcaption>Figure 1. Use Case Diagram highlighting the separation between User interactions and Data Ingestion.</figcaption>
+        </figure>
+
+        <p>
+            As shown in Figure 1, the <strong>User</strong> interacts with the system to search for assets via SPARQL, view market charts, and explore the knowledge graph associated with each asset. A distinct background process ("Trigger Data Ingestion") connects to the <strong>CoinMarketCap API</strong> to fetch external data, ensuring the internal knowledge base remains synchronized with real-world metrics.
+        </p>
+
+        <h3>2.2 System Context (Level 1)</h3>
+        <p>
+            At a broad level, the web application is bounded by the end-user on one side and two critical external systems on the other.
+        </p>
+        
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="Level1C4.png" alt="C4 Context Diagram" style="max-width: 100%; border: 1px solid #ddd; padding: 5px;">
+            <figcaption>Figure 2. System context diagram showing the data flow between the explorer, CMC, and Fuseki.</figcaption>
+        </figure>
+
+        <ul>
+            <li><strong>Ingestion:</strong> The explorer actively ingests data from the <strong>CoinMarketCap API</strong> to retrieve raw financial indicators (price, cap, volume).</li>
+            <li><strong>Persistence:</strong> The explorer queries and updates <strong>Apache Jena Fuseki</strong>, which serves as the dedicated RDF triple store for the ontology and asset data.</li>
+        </ul>
+
+        <h3>2.3 Container Architecture (Level 2)</h3>
+        <p>
+            The deployment architecture is split into two primary execution environments (containers) to decouple the user interface from the business logic.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="Level2C4.drawio.png" alt="C4 Container Diagram" style="max-width: 100%; border: 1px solid #ddd; padding: 5px;">
+            <figcaption>Figure 3. Container diagram illustrating the HTTP-based communication flow.</figcaption>
+        </figure>
+
+        <ul>
+            <li><strong>Web Application:</strong> The client-side frontend that provides the intuitive interface and initiates API calls over HTTPS.</li>
+            <li><strong>Server:</strong> The backend component that encapsulates the application's core services and logic.</li>
+            <li><strong>Apache Jena Fuseki:</strong> The persistent storage container that holds the knowledge graph.</li>
+        </ul>
+
+        <h3>2.4 Component Design (Level 3)</h3>
+        <p>
+            The backend is further decomposed into modular components. This internal structure enforces a clean separation between "Read" operations (user queries) and "Write" operations (data ingestion), as illustrated in the component diagram.
+        </p>
+
+        <figure style="text-align: center; margin: 2rem 0;">
+            <img src="BackendC4.drawio(1).png" alt="C4 Component Diagram" style="max-width: 100%; border: 1px solid #ddd; padding: 5px;">
+            <figcaption>Figure 4. Backend component diagram detailing the internal control flow.</figcaption>
+        </figure>
+
+        <h4>2.4.1 Initialization Layer</h4>
+        <p>
+            Upon startup, the server initializes the <strong>Ontology Loader</strong>. This specialized module is responsible for reading the static ontology definitions and loading them into the knowledge graph, establishing the schema before any data processing occurs.
+        </p>
+
+        <h4>2.4.2 User Requests</h4>
+        <p>
+            When the Web Application sends a request in relation to a cryptocurrency asset, the flow is routed as follows:
+        </p>
+        <ol>
+            <li><strong>Crypto Controller:</strong> Routes the read request. It acts as the entry point for creating and retrieving records.</li>
+            <li><strong>Crypto Service:</strong> The controller calls this service to handle the business logic. It constructs the necessary queries.</li>
+            <li><strong>SPARQL Client:</strong> The service sends <code>SELECT</code> queries to this database driver, which executes them against the RDF Triple Store via HTTP.</li>
+        </ol>
+
+        <h4>2.4.3 Data Ingestion</h4>
+        <p>
+            Administrative operations follow a separate pipeline to ensure data integrity:
+        </p>
+        <ol>
+            <li><strong>Ingest Controller:</strong> Routes write requests and exposes endpoints to manually trigger the information pipeline.</li>
+            <li><strong>Ingest Service:</strong> This core service performs the conversion logic. It converts JSON data into RDF triples.</li>
+            <li><strong>CMC Client:</strong> The Ingest Service requests raw data from this wrapper, which executes a GET request to the external <strong>CoinMarketCap API</strong>.</li>
+            <li><strong>SPARQL Client:</strong> Once transformed, the Ingest Service sends <code>INSERT</code> commands to the SPARQL Client to persist the new triples in <strong>Apache Jena Fuseki</strong>.</li>
+        </ol>
+    </section>
+
+    <section id="data-structures">
+        <h2>3. Internal Data Structures and Models</h2>
+
+        <h3>3.1 The Backend: RDF Triples (SPO)</h3>
+        <p>
+            Internally, the application manages data as <strong>Subject-Predicate-Object (SPO)</strong> triples. Unlike a relational schema where a "Coin" is a row with fixed columns, our internal model treats every attribute as an independent edge in the graph.
+        </p>
+        <ul>
+            <li><strong>Subject:</strong> The resource URI (e.g., <code>cryx:bitcoin</code>).</li>
+            <li><strong>Predicate:</strong> The property (e.g., <code>cryx:hasMarketSnapshot</code>).</li>
+            <li><strong>Object:</strong> The literal value or linked resource (e.g., <code>"90000"^^xsd:decimal</code> or <code>cryx:Snapshot_bitcoin_1768230062856</code>).</li>
+        </ul>
+        <p>
+            The triples and classes are created by the <strong>Ingest Service</strong> by retrieving data from the <strong>CoinMarketCap API</strong> and converting it into RDF triples using different templates.
+        </p>
+        <pre><code>
+            ${assetId} a :CryptoAsset ;
+                       a ${typeClass} ;
+                       rdfs:label "${details.name}" ;
+                       :symbol "${basic.symbol}" ;
+                       :description "${safeDesc}" ;
+                       :logo "${details.logo}"^^xsd:anyURI ;
+                       :dateLaunched "${details.date_added}"^^xsd:dateTime ;
+                       :hasMarketSnapshot ${snapshotId} .
+
+            
+            ${assetId} :hasTag ${tagId} .
+            ${tagId} a :CryptoTag ; rdfs:label "${tag}" .
+
+            ${assetId} :${predicate} "${url}"^^xsd:anyURI .
+
+            ${assetId} :hasMarketSnapshot ${snapshotId} .
+
+            ${snapshotId} a :MarketSnapshot ;
+                          :currency "USD" ;
+                          :currentPrice "${quote.price}"^^xsd:decimal ;
+                          :marketCap "${quote.market_cap}"^^xsd:decimal ;
+                          :totalVolume24h "${quote.volume_24h}"^^xsd:decimal ;
+                          :marketRank "${basic.cmc_rank}"^^xsd:integer ;
+                          :atTime "${quote.last_updated}"^^xsd:dateTime .
+        </code></pre>
+
+        <h3>3.2 The Frontend: Nested DTOs (Data Transfer Objects)</h3>
+        <p>
+            To facilitate React rendering, the backend service layer transforms the flat list of SPARQL results into hierarchical JSON structures.
+        </p>
+        <pre><code>
+{
+  "symbol": "BTC",
+  "type": "http://cryx.org/ontology#Coin", 
+  "label": {
+    "id": "http://cryx.org/ontology#Bitcoin",
+    "label": "Bitcoin"
+  },
+  "description": "A decentralized digital currency created in 2009...",
+  "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": "http://cryx.org/ontology#Coin",
+  "hasTag": [
+    {
+      "id": "http://cryx.org/ontology#Tag_PoW",
+      "label": "ProofOfWork"
+    },
+    {
+      "id": "http://cryx.org/ontology#Tag_StoreOfValue",
+      "label": "StoreOfValue"
+    }
+  ],
+  "hasMarketSnapshot": [
+    {
+      "id": "http://cryx.org/ontology#Snapshot_BTC_176816423",
+      "currentPrice": "90000",
+      "marketCap": "1500000000000",
+      "atTime": "2026-01-12T10:00:00Z"
+    },
+    {
+      "id": "http://cryx.org/ontology#Snapshot_BTC_176816999",
+      "currentPrice": "89500",
+      "marketCap": "1490000000000",
+      "atTime": "2026-01-11T10:00:00Z"
+    }
+  ]
+}
+        </code></pre>
+        <p>
+            This transformation is performed by the <code>CryptoService</code>, which groups repeating subjects (e.g., a coin with 10 different tags) into a single object with array properties, effectively flattening the graph into a tree for the UI components.
+        </p>
+    </section>
+
+    <section id="api-architecture">
+        <h2>4. Technical Aspects of the API</h2>
+        <p>
+            The system adopts a <strong>Resource-Oriented Architecture (REST)</strong> to abstract the complexity of SPARQL from the client. REST was selected to provide distinct endpoints for specific user intents.
+        </p>
+
+        <h3>4.1 API Design Principles</h3>
+        <p>The API acts as a semantic gateway. It does not simply pass data through; it translates domain-specific HTTP requests into SPARQL queries.</p>
+        <table>
+            <tr>
+                <th>Method</th>
+                <th>Endpoint</th>
+                <th>SPARQL Operation</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>GET</td>
+                <td><code>/api/crypto/search</code></td>
+                <td><code>FILTER regex(?name, ...)</code></td>
+                <td>Performs semantic search across assets.</td>
+            </tr>
+            <tr>
+                <td>GET</td>
+                <td><code>/api/crypto/:symbol</code></td>
+                <td><code>SELECT ?p ?o ?oLabel ?nestedP ?nestedO WHERE {
+            ?asset :symbol "${symbol}" .
+              ...  }</code></td>
+                <td>Retrieves direct properties of a specific asset.</td>
+            </tr>
+            <tr>
+                <td>POST</td>
+                <td><code>/api/ingest/sync</code></td>
+                <td><code>INSERT DATA { ... }</code></td>
+                <td>Triggers the ETL pipeline to update the graph.</td>
+            </tr>
+        </table>
+
+    </section>
+
+    <section id="knowledge-model">
+        <h2>5. The RDF Knowledge Model (Ontology)</h2>
+        <p>
+            The system relies on a custom ontology (namespace <code>cryx:</code>) designed to capture the volatility of financial markets while maintaining semantic links.
+        </p>
+
+        <h3>5.1 Class Hierarchy</h3>
+        <p>The backbone of the knowledge model is the class hierarchy:</p>
+        <ul>
+            <li><strong><code>cryx:CryptoAsset</code></strong>: The superclass for all tradable assets.
+                <ul>
+                    <li><strong><code>cryx:Coin</code></strong>: Assets operating on their own Layer 1 blockchain (e.g., Bitcoin).</li>
+                    <li><strong><code>cryx:Token</code></strong>: Assets operating on another chain (e.g., ERC20 tokens).</li>
+                </ul>
+            </li>
+            <li><strong><code>cryx:MarketSnapshot</code></strong>: A reification class used to model temporal data.</li>
+            <li><strong><code>cryx:CryptoTag</code></strong>: Concepts used for categorizing assets (e.g., "DeFi", "SmartContract").</li>
+        </ul>
+
+        <pre><code>
+            :CryptoAsset rdf:type owl:Class ;
+            rdfs:label "Crypto Asset"@en ;
+            rdfs:subClassOf schema:FinancialProduct ;
+            rdfs:comment "A digital asset that uses cryptography to secure transactions, control the creation of additional units, and verify the transfer of assets."@en .
+
+            :MarketSnapshot rdf:type owl:Class ;
+            rdfs:subClassOf schema:Thing ;
+            rdfs:label "Market Snapshot"@en ;
+            rdfs:comment "A record of financial metrics for a crypto asset at a specific point in time."@en .
+
+            :CryptoTag rdf:type owl:Class ;
+            rdfs:subClassOf schema:Thing ;
+            rdfs:label "Crypto Tag"@en ;
+            rdfs:comment "A tag that describes a cryptocurrency, token, or other digital asset."@en .
+
+            #################################################################
+            #    Technical Classification
+            #################################################################
+
+            :Coin rdf:type owl:Class ;
+            rdfs:subClassOf :CryptoAsset ;
+            rdfs:label "Crypto Coin"@en ;
+            rdfs:comment "A cryptocurrency that runs on its own independent blockchain (Layer 1). Acts as the native fuel for that network."@en ;
+            owl:disjointWith :Token .
+
+            :Token rdf:type owl:Class ;
+            rdfs:subClassOf :CryptoAsset ;
+            rdfs:label "Crypto Token"@en ;
+            rdfs:comment "A cryptocurrency that relies on another blockchain's infrastructure (Layer 2 or dApp). Often represents a specific utility or asset."@en .
+
+            #################################################################
+            #    Object Properties
+            #################################################################
+
+            :hasMarketSnapshot rdf:type owl:ObjectProperty ;
+            rdfs:domain :CryptoAsset ;
+            rdfs:range :MarketSnapshot ;
+            rdfs:label "has market snapshot"@en ;
+            rdfs:comment "Links a crypto asset to a specific historical or current market data record."@en .
+
+            :hasTag rdf:type owl:ObjectProperty ;
+            rdfs:domain :CryptoAsset ;
+            rdfs:range :CryptoTag ;
+            rdfs:label "has tag"@en ;
+            rdfs:comment "Links a crypto asset to a specific tag."@en .
+
+            #################################################################
+            #    Data Properties
+            #################################################################
+
+            :atTime rdf:type owl:DatatypeProperty ;
+                rdfs:domain :MarketSnapshot ;
+                rdfs:range xsd:dateTime ;
+                rdfs:comment "The specific timestamp when these stats were recorded." .
+
+            :currency rdf:type owl:DatatypeProperty ;
+                rdfs:domain :MarketSnapshot ;
+                rdfs:range xsd:string ;
+                rdfs:comment "The fiat currency code for these values (e.g., 'EUR', 'USD')." .
+
+            :currentPrice rdf:type owl:DatatypeProperty ;
+                rdfs:domain :MarketSnapshot ;
+                rdfs:range xsd:decimal .
+
+            :marketCap rdf:type owl:DatatypeProperty ;
+                rdfs:domain :MarketSnapshot ;
+                rdfs:range xsd:decimal .
+
+            :totalVolume24h rdf:type owl:DatatypeProperty ;
+                rdfs:domain :MarketSnapshot ;
+                rdfs:range xsd:decimal .
+
+            :marketRank rdf:type owl:DatatypeProperty ;
+                rdfs:domain :MarketSnapshot ;
+                rdfs:range xsd:integer .
+
+            :website rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "website"@en ;
+                rdfs:comment "The website for the asset."@en .
+
+            :technicalDocumentation rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "technical documentation"@en ;
+                rdfs:comment "The technical documentation for the asset."@en .
+
+            :sourceCode rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "source code"@en ;
+                rdfs:comment "The source code for the asset."@en .
+
+            :explorer rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "explorer"@en ;
+                rdfs:comment "The explorer for the asset."@en .
+
+            :messageBoard rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "message board"@en ;
+                rdfs:comment "The message board for the asset."@en .
+
+            :chat rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "chat"@en ;
+                rdfs:comment "The chat service for the asset."@en .
+
+            :announcement rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "announcement"@en ;    
+                rdfs:comment "The announcement service for the asset."@en .
+
+            :twitter rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "twitter"@en ;
+                rdfs:comment "The twitter account for the asset."@en .
+
+            :reddit rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "reddit"@en ;
+                rdfs:comment "The reddit account for the asset."@en .
+
+            :logo rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:anyURI ;
+                rdfs:label "logo"@en ;
+                rdfs:comment "The logo for the asset."@en .
+
+            :description rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:string ;
+                rdfs:label "description"@en ;
+                rdfs:comment "A description of the asset."@en .
+
+            :dateLaunched rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:dateTime ;
+                rdfs:label "date launched"@en ;
+                rdfs:comment "The date the asset was launched."@en .
+
+            :symbol rdf:type owl:DatatypeProperty ;
+                rdfs:domain :CryptoAsset ;
+                rdfs:range xsd:string ;
+                rdfs:label "symbol"@en ;
+                rdfs:comment "The symbol used to identify the asset."@en .
+        </code></pre>
+
+        <h3>5.2 Modeling Temporal Data</h3>
+        <p>
+            A significant modeling challenge was representing price history in RDF. Triples are binary static facts (Subject-Predicate-Object). To handle time-series data, we adopted the <strong>N-ary Relation Pattern</strong> (Snapshot).
+        </p>
+        <p>
+            Instead of <code>:Bitcoin :price "90000"</code> (which overwrites previous prices), we use:
+        </p>
+        <pre><code>
+:bitcoin cryx:hasMarketSnapshot :Snapshot_bitcoin_1768230062856 .
+:Snapshot_bitcoin_1768230062856
+        rdf:type         :MarketSnapshot;
+        :atTime          "2026-01-12T14:58:00Z"^^xsd:dateTime;
+        :currency        "USD";
+        :currentPrice    90825.41436564566;
+        :marketCap       1814233383159.2969;
+        :marketRank      1;
+        :totalVolume24h  34153154129.165592 .
+        </code></pre>
+        <p>
+            This allows the graph to grow historically without losing previous states.
+        </p>
+    </section>
+
+    <section id="pragmatic-usage">
+        <h2>6. Pragmatic Use of External Data & Linked Data</h2>
+        <p>
+            The system adheres to <strong>Linked Data Principles</strong> by exposing entities via URIs and providing mechanisms to ingest data from non-semantic sources.
+        </p>
+
+        <h3>6.1 Cryptocurrency Information Pipeline</h3>
+        <p>
+            The <code>IngestService</code> performs a pragmatic conversion of external data. It connects to the CoinMarketCap API, extracts relevant fields, and maps them to our ontology. 
+        </p>
+        <ul>
+            <li><strong>Normalization:</strong> Strings like "Smart Contract Platform" are converted to URIs <code>cryx:Tag_SmartContractPlatform</code>.</li>
+            <li><strong>Sanitization:</strong> Null values in JSON are omitted from the RDF generation to maintain graph sparsity.</li>
+        </ul>
+
+        <h3>6.2 SPARQL Queries</h3>
+        <p>
+            The application demonstrates the power of SPARQL through non-trivial queries that would be computationally expensive in SQL.
+        </p>
+
+        <h4>Query Example: Deep Search with Optional Nested Data</h4>
+        <p>This query retrieves an asset, its type, and its latest snapshot details in a single request, handling cases where data might be incomplete (OPTIONAL clauses).</p>
+        <pre><code>
+            
+            PREFIX : <https://cryx.org/cryptonto#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+            SELECT ?name ?symbol ?price ?marketCap ?type WHERE {
+                ?asset a :CryptoAsset ;
+                       :symbol ?symbol ;
+                       rdfs:label ?name .
+                
+                # Get the specific type (Coin or Token) for display
+                OPTIONAL { 
+                    ?asset a ?typeClass .
+                    FILTER(?typeClass = :Coin || ?typeClass = :Token)
+                    BIND(strafter(str(?typeClass), "#") AS ?type) 
+                }
+
+                # Apply the Type Filter (if selected)
+                ?asset a :${type} .
+
+                # Get latest snapshot data (Optional)
+                OPTIONAL {
+                    ?asset :hasMarketSnapshot ?snap .
+                    ?snap :currentPrice ?price ;
+                          :marketCap ?marketCap ;
+                          :atTime ?lastUpdated .
+                }
+
+                # Apply the Search Filter (if typed)
+                 FILTER (
+                    regex(?name, "${term}", "i") || 
+                    regex(?symbol, "${term}", "i")
+                )
+            }
+            ORDER BY DESC(?marketCap)
+            LIMIT 50
+        `;
+    },
+        </code></pre>
+
+        <h4>Query Example: Insert Data from CoinMarketCap API into Knowledge Graph</h4>
+        <p>This query inserts specific cryptocurrency data retrieved from the CoinMarketCap API into the Knowledge Graph according to the ontology defined classes and properties.</p>
+        <pre><code>
+            
+            PREFIX : <https://cryx.org/cryptonto#>
+            PREFIX owl: <http://www.w3.org/2002/07/owl#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+            INSERT DATA {
+                # 1. Main Asset Definitions
+                :bitcoin a :CryptoAsset ;
+                        a :Coin ;
+                        rdfs:label "Bitcoin" ;
+                        :symbol "BTC" ;
+                        :description "Bitcoin is a decentralized cryptocurrency originally described in a 2008 whitepaper by a person, or group of people, using the alias Satoshi Nakamoto." ;
+                        :logo "https://s2.coinmarketcap.com/static/img/coins/64x64/1.png"^^xsd:anyURI ;
+                        :dateLaunched "2010-07-13T00:00:00.000Z"^^xsd:dateTime ;
+                        :hasMarketSnapshot :Snapshot_bitcoin_1736769000000 .
+
+                # 2. Semantic Tags (Categories)
+                :bitcoin :hasTag :Tag_PoW .
+                :Tag_PoW a :CryptoTag ; rdfs:label "PoW" .
+    
+                :bitcoin :hasTag :Tag_StoreOfValue .
+                :Tag_StoreOfValue a :CryptoTag ; rdfs:label "StoreOfValue" .
+
+                # 3. External Links
+                :bitcoin :website "https://bitcoin.org/"^^xsd:anyURI .
+                :bitcoin :sourceCode "https://github.com/bitcoin/bitcoin"^^xsd:anyURI .
+                :bitcoin :reddit "https://reddit.com/r/bitcoin"^^xsd:anyURI .
+
+                # 4. Market Snapshot (Temporal Data)
+                :Snapshot_bitcoin_1736769000000 a :MarketSnapshot ;
+                    :currency "USD" ;
+                    :currentPrice "92540.25"^^xsd:decimal ;
+                    :marketCap "1834000000000"^^xsd:decimal ;
+                    :totalVolume24h "45000000000"^^xsd:decimal ;
+                    :marketRank "1"^^xsd:integer ;
+                    :atTime "2026-01-13T12:00:00Z"^^xsd:dateTime .
+            }
+    },
+        </code></pre>
+
+        <h3>5.3 Conformance to Linked Data Principles</h3>
+        <p>
+            To evaluate the semantic maturity of the cryx system, we adopt the <strong>5-Star Linked Open Data</strong> deployment scheme originally suggested by Sir Tim Berners-Lee. As defined in the fundamentals of semantic technology, this rating system measures how "linked" and "open" a dataset is, awarding stars based on data accessibility, structure, and standardization.
+        </p>
+        <p>
+            The developed solution achieves a high degree of conformance through the following implementation details:
+        </p>
+
+        <ul style="list-style-type: none; padding-left: 0;">
+            <li style="margin-bottom: 1rem;">
+                <strong>★ One Star (Available on the Web):</strong> 
+                The system makes cryptocurrency data available over the web, consumers can look, search, store, change data and share the data.
+            </li>
+
+            <li style="margin-bottom: 1rem;">
+                <strong>★★ Two Stars (Machine-Readable Structured Data):</strong> 
+                The API returns strictly formatted JSON objects with defined keys (e.g., <code>symbol</code>, <code>price</code>), allowing proprietary software and scripts to process the data directly, as opposed to unstructured text or scanned tables.
+            </li>
+
+            <li style="margin-bottom: 1rem;">
+                <strong>★★★ Three Stars (Non-Proprietary Formats):</strong> 
+                The system eliminates dependency on proprietary formats. The internal storage uses <strong>Turtle (.ttl)</strong> and the external exchange format is <strong>JSON</strong>. These are open standards that allow users to manipulate the data without requiring specific paid software packages.
+            </li>
+
+            <li style="margin-bottom: 1rem;">
+                <strong>★★★★ Four Stars (W3C Open Standards & URIs):</strong> 
+                The solution uses <strong>RDF</strong> (Resource Description Framework) and <strong>SPARQL</strong> to identify and query things, which are the core W3C standards for the Semantic Web. Crucially, every entity is identified by a unique <strong>Uniform Resource Identifier (URI)</strong> (e.g., <code>cryx:Bitcoin</code>). This allows the data to be referenced globally and facilitates the mapping of relationships in a graph database rather than a relational table.
+            </li>
+
+            <li style="margin-bottom: 1rem;">
+                <strong>★★★★★ Five Stars (Linked to Other Data):</strong> 
+                The system does not explicitly link its internal entities to external datasets such as DBPedia or GeoNames, but the ingestion pipeline automatically generates links to external resources, such as official websites (<code>:website</code>), source code repositories (<code>:sourceCode</code>), and technical documentation. By resolving these links, users can discover additional information outside the local graph, creating a network effect that benefits both data consumers and publishers.
+            </li>
+        </ul>
+    </section>
+
+</article>
+
+</body>
+</html>
